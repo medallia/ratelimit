@@ -1,6 +1,7 @@
 package ratelimit
 
 import (
+	"strconv"
 	"strings"
 	"sync"
 
@@ -102,6 +103,27 @@ func checkServiceErr(something bool, msg string) {
 	}
 }
 
+func populateCustomHitsAddend(request *pb.RateLimitRequest) {
+	// TODO if enabled in config
+	for i := 0; i < len(request.Descriptors); i++ {
+		// TODO get descriptor key from config
+		logger.Debugf("Populate cha %d %v", i, request.Descriptors[i].Entries)
+		if len(request.Descriptors[i].Entries) == 1 && request.Descriptors[i].Entries[0].Key == "customHitsKey" {
+			// TODO error handling
+			hitsAddend, _ := strconv.ParseUint(request.Descriptors[i].Entries[0].Value, 10, 32)
+			request.HitsAddend = uint32(hitsAddend)
+
+			logger.Debugf("Custom hits addend %d", request.HitsAddend)
+
+			// Remove hitsAddendDescriptor
+			d := request.Descriptors
+			d[i] = d[len(d)-1]
+			request.Descriptors = d[:len(d)-1]
+			break
+		}
+	}
+}
+
 func (this *service) shouldRateLimitWorker(
 	ctx context.Context, request *pb.RateLimitRequest) *pb.RateLimitResponse {
 
@@ -110,6 +132,8 @@ func (this *service) shouldRateLimitWorker(
 
 	snappedConfig := this.GetCurrentConfig()
 	checkServiceErr(snappedConfig != nil, "no rate limit configuration loaded")
+
+	populateCustomHitsAddend(request)
 
 	limitsToCheck := make([]*config.RateLimit, len(request.Descriptors))
 	for i, descriptor := range request.Descriptors {

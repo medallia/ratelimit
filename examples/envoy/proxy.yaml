@@ -84,6 +84,19 @@ static_resources:
                                       header_name: "foo"
                                       descriptor_key: "foo"
                         - match:
+                            prefix: /custom-hits-header
+                          route:
+                            cluster: mock
+                            rate_limits:
+                              - actions:
+                                  - request_headers:
+                                      header_name: "foo"
+                                      descriptor_key: "foo"
+                              - actions:
+                                  - request_headers:
+                                      header_name: "custom-hits"
+                                      descriptor_key: "customHitsKey"
+                        - match:
                             prefix: /twoheader
                           route:
                             cluster: mock

@@ -171,6 +171,23 @@ func TestService(test *testing.T) {
 	t.assert.EqualValues(1, t.statStore.NewCounter("config_load_error").Value())
 }
 
+func TestCustomHitsAddend(test *testing.T) {
+	t := commonSetup(test)
+	defer t.controller.Finish()
+	service := t.setupBasicService()
+
+	request := common.NewRateLimitRequest("test-domain", [][][2]string{{{"hello", "world"}}, {{"customHitsKey", "20"}}}, 0)
+	expectedUpdatedRequest := common.NewRateLimitRequest("test-domain", [][][2]string{{{"hello", "world"}}}, 20)
+
+	limits := []*config.RateLimit{config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, "key", t.statStore)}
+	t.config.EXPECT().GetLimit(nil, "test-domain", request.Descriptors[0]).Return(limits[0])
+	t.cache.EXPECT().DoLimit(nil, expectedUpdatedRequest, limits).Return(
+		[]*pb.RateLimitResponse_DescriptorStatus{{Code: pb.RateLimitResponse_OK, CurrentLimit: nil, LimitRemaining: 0}})
+
+	_, err := service.ShouldRateLimit(nil, request)
+	t.assert.Nil(err)
+}
+
 func TestEmptyDomain(test *testing.T) {
 	t := commonSetup(test)
 	defer t.controller.Finish()
