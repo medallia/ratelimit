@@ -107,7 +107,6 @@ func populateCustomHitsAddend(request *pb.RateLimitRequest) {
 	// TODO if enabled in config
 	for i := 0; i < len(request.Descriptors); i++ {
 		// TODO get descriptor key from config
-		logger.Debugf("Populate cha %d %v", i, request.Descriptors[i].Entries)
 		if len(request.Descriptors[i].Entries) == 1 && request.Descriptors[i].Entries[0].Key == "customHitsKey" {
 			// TODO error handling
 			hitsAddend, _ := strconv.ParseUint(request.Descriptors[i].Entries[0].Value, 10, 32)
