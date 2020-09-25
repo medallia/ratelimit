@@ -176,13 +176,21 @@ func TestCustomHitsAddend(test *testing.T) {
 	defer t.controller.Finish()
 	service := t.setupBasicService()
 
-	request := common.NewRateLimitRequest("test-domain", [][][2]string{{{"hello", "world"}}, {{"customHitsKey", "20"}}}, 0)
-	expectedUpdatedRequest := common.NewRateLimitRequest("test-domain", [][][2]string{{{"hello", "world"}}}, 20)
+	// Test with multiple descriptor to verify that order is preserved
+	request := common.NewRateLimitRequest("test-domain", [][][2]string{{{"hello", "world"}}, {{"customHitsKey", "20"}}, {{"e2", "v2"}}, {{"e3", "v3"}}}, 0)
+	expectedUpdatedRequest := common.NewRateLimitRequest("test-domain", [][][2]string{{{"hello", "world"}}, {{"e2", "v2"}}, {{"e3", "v3"}}}, 20)
 
-	limits := []*config.RateLimit{config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, "key", t.statStore)}
-	t.config.EXPECT().GetLimit(nil, "test-domain", request.Descriptors[0]).Return(limits[0])
+	limits := []*config.RateLimit{config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, "key", t.statStore),
+		config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, "key", t.statStore),
+		config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, "key", t.statStore)}
+
+	t.config.EXPECT().GetLimit(nil, "test-domain", expectedUpdatedRequest.Descriptors[0]).Return(limits[0])
+	t.config.EXPECT().GetLimit(nil, "test-domain", expectedUpdatedRequest.Descriptors[1]).Return(limits[1])
+	t.config.EXPECT().GetLimit(nil, "test-domain", expectedUpdatedRequest.Descriptors[2]).Return(limits[2])
 	t.cache.EXPECT().DoLimit(nil, expectedUpdatedRequest, limits).Return(
-		[]*pb.RateLimitResponse_DescriptorStatus{{Code: pb.RateLimitResponse_OK, CurrentLimit: nil, LimitRemaining: 0}})
+		[]*pb.RateLimitResponse_DescriptorStatus{{Code: pb.RateLimitResponse_OK, CurrentLimit: nil, LimitRemaining: 0},
+			{Code: pb.RateLimitResponse_OK, CurrentLimit: nil, LimitRemaining: 0},
+			{Code: pb.RateLimitResponse_OK, CurrentLimit: nil, LimitRemaining: 0}})
 
 	_, err := service.ShouldRateLimit(nil, request)
 	t.assert.Nil(err)

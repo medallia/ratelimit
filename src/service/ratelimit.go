@@ -106,7 +106,7 @@ func checkServiceErr(something bool, msg string) {
 func populateCustomHitsAddend(request *pb.RateLimitRequest) {
 	// TODO if enabled in config
 	for i := 0; i < len(request.Descriptors); i++ {
-		// TODO get descriptor key from config
+		// TODO get descriptor key from config. Ideally per domain, but maybe a global configuration is good enough too.
 		if len(request.Descriptors[i].Entries) == 1 && request.Descriptors[i].Entries[0].Key == "customHitsKey" {
 			// TODO error handling
 			hitsAddend, _ := strconv.ParseUint(request.Descriptors[i].Entries[0].Value, 10, 32)
@@ -116,7 +116,7 @@ func populateCustomHitsAddend(request *pb.RateLimitRequest) {
 
 			// Remove hitsAddendDescriptor
 			d := request.Descriptors
-			d[i] = d[len(d)-1]
+			copy(d[i:], d[i+1:])
 			request.Descriptors = d[:len(d)-1]
 			break
 		}
@@ -140,6 +140,7 @@ func (this *service) shouldRateLimitWorker(
 	}
 
 	responseDescriptorStatuses := this.cache.DoLimit(ctx, request, limitsToCheck)
+	logger.Warnf("LL %d DL %d", len(limitsToCheck), len(responseDescriptorStatuses))
 	assert.Assert(len(limitsToCheck) == len(responseDescriptorStatuses))
 
 	response := &pb.RateLimitResponse{}
