@@ -196,6 +196,19 @@ func TestCustomHitsAddend(test *testing.T) {
 	t.assert.Nil(err)
 }
 
+func TestCustomHitsAddendInvalidValue(test *testing.T) {
+	t := commonSetup(test)
+	defer t.controller.Finish()
+	service := t.setupBasicService()
+
+	request := common.NewRateLimitRequest("test-domain", [][][2]string{{{"hello", "world"}}, {{"customHitsKey", "invalid"}}, {{"e2", "v2"}}, {{"e3", "v3"}}}, 0)
+
+	response, err := service.ShouldRateLimit(nil, request)
+	t.assert.Nil(response)
+	t.assert.Equal("customHitsKey must be a positive integer", err.Error())
+	t.assert.EqualValues(1, t.statStore.NewCounter("call.should_rate_limit.service_error").Value())
+}
+
 func TestEmptyDomain(test *testing.T) {
 	t := commonSetup(test)
 	defer t.controller.Finish()
