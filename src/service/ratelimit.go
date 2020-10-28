@@ -103,13 +103,17 @@ func checkServiceErr(something bool, msg string) {
 	}
 }
 
-func populateCustomHitsAddend(request *pb.RateLimitRequest) {
+func populateCustomHitsAddend(request *pb.RateLimitRequest) error {
 	// TODO if enabled in config
 	for i := 0; i < len(request.Descriptors); i++ {
 		// TODO get descriptor key from config. Ideally per domain, but maybe a global configuration is good enough too.
 		if len(request.Descriptors[i].Entries) == 1 && request.Descriptors[i].Entries[0].Key == "customHitsKey" {
 			// TODO error handling
-			hitsAddend, _ := strconv.ParseUint(request.Descriptors[i].Entries[0].Value, 10, 32)
+			hitsAddend, err := strconv.ParseUint(request.Descriptors[i].Entries[0].Value, 10, 32)
+			if err != nil {
+				return err
+			}
+
 			request.HitsAddend = uint32(hitsAddend)
 
 			logger.Debugf("Custom hits addend %d", request.HitsAddend)
@@ -121,6 +125,8 @@ func populateCustomHitsAddend(request *pb.RateLimitRequest) {
 			break
 		}
 	}
+
+	return nil
 }
 
 func (this *service) shouldRateLimitWorker(
@@ -132,7 +138,7 @@ func (this *service) shouldRateLimitWorker(
 	snappedConfig := this.GetCurrentConfig()
 	checkServiceErr(snappedConfig != nil, "no rate limit configuration loaded")
 
-	populateCustomHitsAddend(request)
+	checkServiceErr(populateCustomHitsAddend(request) == nil, "customHitsKey must be a positive integer")
 
 	limitsToCheck := make([]*config.RateLimit, len(request.Descriptors))
 	for i, descriptor := range request.Descriptors {
