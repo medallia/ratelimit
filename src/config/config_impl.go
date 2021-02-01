@@ -57,6 +57,7 @@ var validKeys = map[string]bool{
 // @param statsScope supplies the owning scope.
 // @param key supplies the fully resolved key name of the entry.
 // @return new stats.
+//todo : ret.TotalHits = statsScope.NewCounter(key+ application + endpoint + tenant + ".total_hits")
 func newRateLimitStats(statsScope stats.Scope, key string) RateLimitStats {
 	ret := RateLimitStats{}
 	ret.TotalHits = statsScope.NewCounter(key + ".total_hits")
