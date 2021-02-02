@@ -60,6 +60,7 @@ var validKeys = map[string]bool{
 //todo : ret.TotalHits = statsScope.NewCounter(key+ application + endpoint + tenant + ".total_hits")
 func newRateLimitStats(statsScope stats.Scope, key string) RateLimitStats {
 	ret := RateLimitStats{}
+	logger.Debugf("outputing test stats %s", key)
 	ret.TotalHits = statsScope.NewCounter(key + ".test" + ".total_hits")
 	ret.OverLimit = statsScope.NewCounter(key + ".test1" + ".test2" + ".over_limit")
 	ret.NearLimit = statsScope.NewCounter(key + ".test3" + ".test2" + ".test1" + ".near_limit")
