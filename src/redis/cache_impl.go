@@ -62,7 +62,7 @@ func (this *rateLimitCacheImpl) DoLimit(
 	for i := 0; i < len(request.Descriptors); i++ {
 		cacheKeys[i] = this.cacheKeyGenerator.GenerateCacheKey(
 			request.Domain, request.Descriptors[i], limits[i], now)
-
+		logger.Warnf("Cache Key: %s", cacheKeys[i].Key)
 		// Increase statistics for limits hit by their respective requests.
 		if limits[i] != nil {
 			limits[i].Stats.TotalHits.Add(uint64(hitsAddend))
