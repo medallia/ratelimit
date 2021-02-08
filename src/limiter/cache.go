@@ -31,8 +31,5 @@ type RateLimitCache interface {
 	//               list must be same as the length of the descriptors list.
 	// @return a list of DescriptorStatuses which corresponds to each passed in descriptor/limit pair.
 	// 				 Throws RedisError if there was any error talking to the cache.
-	DoLimit(
-		ctx context.Context,
-		request *pb.RateLimitRequest,
-		limits []*config.RateLimit) []*pb.RateLimitResponse_DescriptorStatus
+	DoLimit(ctx context.Context, request *pb.RateLimitRequest, limits []*config.RateLimit, rlConfig config.RateLimitConfig) []*pb.RateLimitResponse_DescriptorStatus
 }

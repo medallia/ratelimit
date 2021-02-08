@@ -46,7 +46,9 @@ func pipelineAppend(client Client, pipeline *Pipeline, key string, hitsAddend ui
 func (this *rateLimitCacheImpl) DoLimit(
 	ctx context.Context,
 	request *pb.RateLimitRequest,
-	limits []*config.RateLimit) []*pb.RateLimitResponse_DescriptorStatus {
+	limits []*config.RateLimit,
+	rlConfig config.RateLimitConfig,
+) []*pb.RateLimitResponse_DescriptorStatus {
 
 	logger.Debugf("starting cache lookup")
 
