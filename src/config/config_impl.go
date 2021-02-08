@@ -57,7 +57,6 @@ var validKeys = map[string]bool{
 // @param statsScope supplies the owning scope.
 // @param key supplies the fully resolved key name of the entry.
 // @return new stats.
-//todo : ret.TotalHits = statsScope.NewCounter(key+ application + endpoint + tenant + ".total_hits")
 func newRateLimitStats(statsScope stats.Scope, key string) RateLimitStats {
 	ret := RateLimitStats{}
 	logger.Debugf("outputing test stats %s", key)
@@ -78,6 +77,12 @@ func NewRateLimit(
 	requestsPerUnit uint32, unit pb.RateLimitResponse_RateLimit_Unit, key string, scope stats.Scope) *RateLimit {
 
 	return &RateLimit{FullKey: key, Stats: newRateLimitStats(scope, key), Limit: &pb.RateLimitResponse_RateLimit{RequestsPerUnit: requestsPerUnit, Unit: unit}}
+}
+
+func (this *rateLimitConfigImpl) GetDescriptorStat(domain string, descriptor *pb_struct.RateLimitDescriptor) *RateLimitStats {
+	key := domain + "." + this.descriptorToKey(descriptor)
+	ret := newRateLimitStats(this.statsScope, key)
+	return &ret
 }
 
 // Dump an individual descriptor for debugging purposes.

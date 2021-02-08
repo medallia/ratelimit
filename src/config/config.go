@@ -20,11 +20,47 @@ func (e RateLimitConfigError) Error() string {
 }
 
 // Stats for an individual rate limit config entry.
+//todo: make fields private
 type RateLimitStats struct {
 	TotalHits               stats.Counter
 	OverLimit               stats.Counter
 	NearLimit               stats.Counter
 	OverLimitWithLocalCache stats.Counter
+}
+
+//todo: make detailed metrics mode configurable
+var detailedMetricsMode = true
+
+func (this RateLimitStats) AddTotalHits(u uint64, domain string, descriptor *pb_struct.RateLimitDescriptor, config RateLimitConfig) {
+	this.TotalHits.Add(u)
+	if(detailedMetricsMode) {
+		stat := config.GetDescriptorStat(domain, descriptor)
+		stat.TotalHits.Add(u)
+	}
+}
+
+func (this RateLimitStats) AddOverLimit(u uint64, domain string, descriptor *pb_struct.RateLimitDescriptor, config RateLimitConfig) {
+	this.OverLimit.Add(u)
+	if(detailedMetricsMode) {
+		stat := config.GetDescriptorStat(domain, descriptor)
+		stat.OverLimit.Add(u)
+	}
+}
+
+func (this RateLimitStats) AddNearLimit(u uint64, domain string, descriptor *pb_struct.RateLimitDescriptor, config RateLimitConfig) {
+	this.NearLimit.Add(u)
+	if(detailedMetricsMode) {
+		stat := config.GetDescriptorStat(domain, descriptor)
+		stat.NearLimit.Add(u)
+	}
+}
+
+func (this RateLimitStats) AddOverLimitWithLocalCache(u uint64, domain string, descriptor *pb_struct.RateLimitDescriptor, config RateLimitConfig) {
+	this.OverLimitWithLocalCache.Add(u)
+	if(detailedMetricsMode) {
+		stat := config.GetDescriptorStat(domain, descriptor)
+		stat.OverLimitWithLocalCache.Add(u)
+	}
 }
 
 // Wrapper for an individual rate limit config entry which includes the defined limit and stats.
@@ -45,6 +81,12 @@ type RateLimitConfig interface {
 	// @param descriptor supplies the descriptor to look up.
 	// @return a rate limit to apply or nil if no rate limit is configured for the descriptor.
 	GetLimit(ctx context.Context, domain string, descriptor *pb_struct.RateLimitDescriptor) *RateLimit
+
+	// Gets the Stat structure associated to the given descriptor. If it does not exist it's created.
+	// @param domain supplies the descriptor's domain
+	// @param descriptor supplies the descriptor that the Stat is assigned to.
+	// @return a Stat object associated with the given descriptor.
+	GetDescriptorStat(domain string, descriptor *pb_struct.RateLimitDescriptor) *RateLimitStats
 }
 
 // Information for a config file to load into the aggregate config.

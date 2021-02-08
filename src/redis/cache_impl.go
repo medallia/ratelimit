@@ -62,12 +62,13 @@ func (this *rateLimitCacheImpl) DoLimit(
 	for i := 0; i < len(request.Descriptors); i++ {
 		cacheKeys[i] = this.cacheKeyGenerator.GenerateCacheKey(
 			request.Domain, request.Descriptors[i], limits[i], now)
-		logger.Warnf("Cache Key: %s", cacheKeys[i].Key)
 		// Increase statistics for limits hit by their respective requests.
 		if limits[i] != nil {
-			limits[i].Stats.TotalHits.Add(uint64(hitsAddend))
+			limits[i].Stats.AddTotalHits(uint64(hitsAddend), request.Domain, request.Descriptors[i], rlConfig)
+
 		}
 	}
+
 
 	isOverLimitWithLocalCache := make([]bool, len(request.Descriptors))
 	results := make([]uint32, len(request.Descriptors))
@@ -139,8 +140,8 @@ func (this *rateLimitCacheImpl) DoLimit(
 					LimitRemaining:     0,
 					DurationUntilReset: CalculateReset(limits[i].Limit, this.timeSource),
 				}
-			limits[i].Stats.OverLimit.Add(uint64(hitsAddend))
-			limits[i].Stats.OverLimitWithLocalCache.Add(uint64(hitsAddend))
+			limits[i].Stats.AddOverLimit(uint64(hitsAddend), request.Domain, request.Descriptors[i], rlConfig)
+			limits[i].Stats.AddOverLimitWithLocalCache(uint64(hitsAddend), request.Domain, request.Descriptors[i], rlConfig)
 			continue
 		}
 
@@ -167,13 +168,13 @@ func (this *rateLimitCacheImpl) DoLimit(
 			// Otherwise, only the difference between the current limit value and the over limit threshold
 			// were over limit hits.
 			if limitBeforeIncrease >= overLimitThreshold {
-				limits[i].Stats.OverLimit.Add(uint64(hitsAddend))
+				limits[i].Stats.AddOverLimit(uint64(hitsAddend), request.Domain, request.Descriptors[i], rlConfig)
 			} else {
-				limits[i].Stats.OverLimit.Add(uint64(limitAfterIncrease - overLimitThreshold))
+				limits[i].Stats.AddOverLimit(uint64(limitAfterIncrease - overLimitThreshold), request.Domain, request.Descriptors[i], rlConfig)
 
 				// If the limit before increase was below the over limit value, then some of the hits were
 				// in the near limit range.
-				limits[i].Stats.NearLimit.Add(uint64(overLimitThreshold - max(nearLimitThreshold, limitBeforeIncrease)))
+				limits[i].Stats.AddNearLimit(uint64(overLimitThreshold - max(nearLimitThreshold, limitBeforeIncrease)), request.Domain, request.Descriptors[i], rlConfig)
 			}
 			if this.localCache != nil {
 				// Set the TTL of the local_cache to be the entire duration.
@@ -204,9 +205,9 @@ func (this *rateLimitCacheImpl) DoLimit(
 				// only the difference between the current limit value and the near limit threshold were near
 				// limit hits.
 				if limitBeforeIncrease >= nearLimitThreshold {
-					limits[i].Stats.NearLimit.Add(uint64(hitsAddend))
+					limits[i].Stats.AddNearLimit(uint64(hitsAddend), request.Domain, request.Descriptors[i], rlConfig)
 				} else {
-					limits[i].Stats.NearLimit.Add(uint64(limitAfterIncrease - nearLimitThreshold))
+					limits[i].Stats.AddNearLimit(uint64(limitAfterIncrease - nearLimitThreshold), request.Domain, request.Descriptors[i], rlConfig)
 				}
 			}
 		}
