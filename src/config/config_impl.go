@@ -78,9 +78,9 @@ func NewRateLimit(
 
 	return &RateLimit{FullKey: key, Stats: newRateLimitStats(scope, key), Limit: &pb.RateLimitResponse_RateLimit{RequestsPerUnit: requestsPerUnit, Unit: unit}}
 }
-
+//todo: consider adding a prepend to the key as to not count precise metrics twice.
 func (this *rateLimitConfigImpl) GetDescriptorStat(domain string, descriptor *pb_struct.RateLimitDescriptor) *RateLimitStats {
-	key := domain + "." + this.descriptorToKey(descriptor)
+	key := domain + "." + this.descriptorToKey(descriptor) + "DM"
 	ret := newRateLimitStats(this.statsScope, key)
 	return &ret
 }
