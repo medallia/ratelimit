@@ -31,6 +31,7 @@
   - [Pipelining](#pipelining)
   - [One Redis Instance](#one-redis-instance)
   - [Two Redis Instances](#two-redis-instances)
+- [Memcache](#memcache)
 - [Contact](#contact)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -388,6 +389,17 @@ Output example:
 For information on the fields of a Ratelimit gRPC request please read the information
 on the RateLimitRequest message type in the Ratelimit [proto file.](https://github.com/envoyproxy/envoy/blob/master/api/envoy/service/ratelimit/v3/rls.proto)
 
+# GRPC Client
+The [gRPC client](https://github.com/envoyproxy/ratelimit/blob/master/src/client_cmd/main.go) will interact with ratelimit server and tell you if the requests are over limit.
+## Commandline flags
+* `-dial_string`: used to specify the address of ratelimit server. It defaults to `localhost:8081`.
+* `-domain`: used to specify the domain.
+* `-descriptors`: used to specify one descriptor. You can pass multiple descriptors like following:
+```
+go run main.go -domain test \
+-descriptors name=foo,age=14 -descriptors name=bar,age=18
+```
+
 # Statistics
 
 The rate limit service generates various statistics for each configured rate limit rule that will be useful for end
@@ -412,7 +424,7 @@ STAT:
 * over_limit: Number of rule hits exceeding the threshold rate
 * total_hits: Number of rule hits in total
 
-These are examples of generated stats for some configured rate limit rules from the above examples:
+To use a custom near_limit ratio threshold, you can specify with `NEAR_LIMIT_RATIO` environment variable. It defaults to `0.8` (0-1 scale). These are examples of generated stats for some configured rate limit rules from the above examples:
 
 ```
 ratelimit.service.rate_limit.mongo_cps.database_default.over_limit: 0
@@ -422,6 +434,10 @@ ratelimit.service.rate_limit.mongo_cps.database_users.total_hits: 2939
 ratelimit.service.rate_limit.messaging.message_type_marketing.to_number.over_limit: 0
 ratelimit.service.rate_limit.messaging.message_type_marketing.to_number.total_hits: 0
 ```
+
+## Statistics options
+
+1. `EXTRA_TAGS`: set to `"<k1:v1>,<k2:v2>"` to tag all emitted stats with the provided tags. You might want to tag build commit or release version, for example.
 
 # HTTP Port
 
@@ -501,6 +517,7 @@ As well Ratelimit supports TLS connections and authentication. These can be conf
 
 1. `REDIS_TLS` & `REDIS_PERSECOND_TLS`: set to `"true"` to enable a TLS connection for the specific connection type.
 1. `REDIS_AUTH` & `REDIS_PERSECOND_AUTH`: set to `"password"` to enable authentication to the redis host.
+1. `CACHE_KEY_PREFIX`: a string to prepend to all cache keys
 
 ## Redis type
 
@@ -518,7 +535,7 @@ The deployment type can be specified with the `REDIS_TYPE` / `REDIS_PERSECOND_TY
 
 ## Pipelining
 
-By default, for each request, ratelimit will pick up a connection from pool, wirte multiple redis commands in a single write then reads their responses in a single read. This reduces network delay.
+By default, for each request, ratelimit will pick up a connection from pool, write multiple redis commands in a single write then reads their responses in a single read. This reduces network delay.
 
 For high throughput scenarios, ratelimit also support [implicit pipelining](https://github.com/mediocregopher/radix/blob/v3.5.1/pool.go#L238) . It can be configured using the following environment variables:
 
@@ -553,6 +570,22 @@ To configure two Redis instances use the following environment variables:
 
 This setup will use the Redis server configured with the `_PERSECOND_` vars for
 per second limits, and the other Redis server for all other limits.
+
+# Memcache
+
+Experimental Memcache support has been added as an alternative to Redis in v1.5.
+
+To configure a Memcache instance use the following environment variables instead of the Redis variables:
+
+1. `MEMCACHE_HOST_PORT=<host:port>`
+1. `BACKEND_TYPE=memcache`
+1. `CACHE_KEY_PREFIX`: a string to prepend to all cache keys
+
+With memcache mode increments will happen asynchronously, so it's technically possible for
+a client to exceed quota briefly if multiple requests happen at exactly the same time.
+
+Note that Memcache has a max key length of 250 characters, so operations referencing very long
+descriptors will fail.
 
 # Contact
 

@@ -73,12 +73,8 @@ tests: compile
 
 .PHONY: tests_with_redis
 tests_with_redis: bootstrap_redis_tls tests_unit
-	redis-server --port 6379 &
-	redis-server --port 6380 &
 	redis-server --port 6381 --requirepass password123 &
 	redis-server --port 6382 --requirepass password123 &
-	redis-server --port 6384 --requirepass password123 &
-	redis-server --port 6385 --requirepass password123 &
 
 	redis-server --port 6392 --requirepass password123 &
 	redis-server --port 6393 --requirepass password123 --slaveof 127.0.0.1 6392 --masterauth password123 &
