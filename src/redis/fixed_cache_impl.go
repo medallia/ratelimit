@@ -1,7 +1,6 @@
 package redis
 
 import (
-	"github.com/envoyproxy/ratelimit/src/stats"
 	"math/rand"
 
 	"github.com/coocood/freecache"
@@ -97,7 +96,7 @@ func (this *fixedRateLimitCacheImpl) DoLimit(
 		limitInfo := limiter.NewRateLimitInfo(limits[i], limitBeforeIncrease, limitAfterIncrease, 0, 0)
 
 		responseDescriptorStatuses[i] = this.baseRateLimiter.GetResponseDescriptorStatus(cacheKey.Key,
-			limitInfo, isOverLimitWithLocalCache[i], hitsAddend, stats.DescriptorKey(request.Domain, request.Descriptors[i]))
+			limitInfo, isOverLimitWithLocalCache[i], hitsAddend)
 
 	}
 
@@ -108,10 +107,10 @@ func (this *fixedRateLimitCacheImpl) DoLimit(
 func (this *fixedRateLimitCacheImpl) Flush() {}
 
 func NewFixedRateLimitCacheImpl(client Client, perSecondClient Client, timeSource utils.TimeSource,
-	jitterRand *rand.Rand, expirationJitterMaxSeconds int64, localCache *freecache.Cache, nearLimitRatio float32, cacheKeyPrefix string, manager stats.Manager) limiter.RateLimitCache {
+	jitterRand *rand.Rand, expirationJitterMaxSeconds int64, localCache *freecache.Cache, nearLimitRatio float32, cacheKeyPrefix string) limiter.RateLimitCache {
 	return &fixedRateLimitCacheImpl{
 		client:          client,
 		perSecondClient: perSecondClient,
-		baseRateLimiter: limiter.NewBaseRateLimit(timeSource, jitterRand, expirationJitterMaxSeconds, localCache, nearLimitRatio, cacheKeyPrefix, manager),
+		baseRateLimiter: limiter.NewBaseRateLimit(timeSource, jitterRand, expirationJitterMaxSeconds, localCache, nearLimitRatio, cacheKeyPrefix),
 	}
 }

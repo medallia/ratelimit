@@ -2,7 +2,6 @@ package redis_test
 
 import (
 	"context"
-	"github.com/envoyproxy/ratelimit/test/mocks/stats"
 	"runtime"
 	"testing"
 	"time"
@@ -11,7 +10,7 @@ import (
 	"github.com/envoyproxy/ratelimit/src/config"
 	"github.com/envoyproxy/ratelimit/src/redis"
 	"github.com/envoyproxy/ratelimit/src/utils"
-	gostats "github.com/lyft/gostats"
+	stats "github.com/lyft/gostats"
 
 	"math/rand"
 
@@ -41,14 +40,13 @@ func BenchmarkParallelDoLimit(b *testing.B) {
 
 	mkDoLimitBench := func(pipelineWindow time.Duration, pipelineLimit int) func(*testing.B) {
 		return func(b *testing.B) {
-			statsStore := gostats.NewStore(gostats.NewNullSink(), false)
-			sm := stats.NewMockStatManager(statsStore)
+			statsStore := stats.NewStore(stats.NewNullSink(), false)
 			client := redis.NewClientImpl(statsStore, false, "", "single", "127.0.0.1:6379", poolSize, pipelineWindow, pipelineLimit)
 			defer client.Close()
 
-			cache := redis.NewFixedRateLimitCacheImpl(client, nil, utils.NewTimeSourceImpl(), rand.New(utils.NewLockedSource(time.Now().Unix())), 10, nil, 0.8, "", sm)
+			cache := redis.NewFixedRateLimitCacheImpl(client, nil, utils.NewTimeSourceImpl(), rand.New(utils.NewLockedSource(time.Now().Unix())), 10, nil, 0.8, "")
 			request := common.NewRateLimitRequest("domain", [][][2]string{{{"key", "value"}}}, 1)
-			limits := []*config.RateLimit{config.NewRateLimit(1000000000, pb.RateLimitResponse_RateLimit_SECOND, sm.NewStats("key_value"))}
+			limits := []*config.RateLimit{config.NewRateLimit(1000000000, pb.RateLimitResponse_RateLimit_SECOND, "key_value", statsStore)}
 
 			// wait for the pool to fill up
 			for {
