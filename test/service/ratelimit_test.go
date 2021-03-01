@@ -185,8 +185,8 @@ func TestCustomHitsAddend(test *testing.T) {
 	expectedUpdatedRequest := common.NewRateLimitRequest("test-domain", [][][2]string{{{"hello", "world"}}, {{"e2", "v2"}}, {{"e3", "v3"}}}, 20)
 
 	limits := []*config.RateLimit{config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, "key", t.statStore),
-		config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, "key", t.statStore),
-		config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, "key", t.statStore)}
+		config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, t.sm.NewStats("key")),
+		config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, t.sm.NewStats("key"))}
 
 	t.config.EXPECT().GetLimit(nil, "test-domain", expectedUpdatedRequest.Descriptors[0]).Return(limits[0])
 	t.config.EXPECT().GetLimit(nil, "test-domain", expectedUpdatedRequest.Descriptors[1]).Return(limits[1])
@@ -210,7 +210,7 @@ func TestCustomHitsAddendInvalidValue(test *testing.T) {
 	response, err := service.ShouldRateLimit(nil, request)
 	t.assert.Nil(response)
 	t.assert.Equal("customHitsKey must be a positive integer", err.Error())
-	t.assert.EqualValues(1, t.statStore.NewCounter("call.should_rate_limit.service_error").Value())
+	t.assert.EqualValues(1, t.sm.GetStatsStore().NewCounter("call.should_rate_limit.service_error").Value())
 }
 
 func TestEmptyDomain(test *testing.T) {
