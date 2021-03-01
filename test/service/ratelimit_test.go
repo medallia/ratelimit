@@ -184,7 +184,7 @@ func TestCustomHitsAddend(test *testing.T) {
 	request := common.NewRateLimitRequest("test-domain", [][][2]string{{{"hello", "world"}}, {{"customHitsKey", "20"}}, {{"e2", "v2"}}, {{"e3", "v3"}}}, 0)
 	expectedUpdatedRequest := common.NewRateLimitRequest("test-domain", [][][2]string{{{"hello", "world"}}, {{"e2", "v2"}}, {{"e3", "v3"}}}, 20)
 
-	limits := []*config.RateLimit{config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, "key", t.statStore),
+	limits := []*config.RateLimit{config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, t.sm.NewStats("key")),
 		config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, t.sm.NewStats("key")),
 		config.NewRateLimit(10, pb.RateLimitResponse_RateLimit_MINUTE, t.sm.NewStats("key"))}
 
